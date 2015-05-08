@@ -78,4 +78,122 @@
     expect(overallProgress.fractionCompleted).to.equal(0.8);
 }
 
+//- (void)testDidResumeNotificationIsReceivedByDataTaskAfterResume {
+//    NSURL *delayURL = [self.baseURL URLByAppendingPathComponent:@"delay/1"];
+//    NSURLSessionDataTask *task = [self.manager dataTaskWithRequest:[NSURLRequest requestWithURL:delayURL]
+//                                                 completionHandler:nil];
+//    [task resume];
+//    [task suspend];
+//    [self expectationForNotification:@"com.alamofire.networking.task.resume"
+//                              object:nil
+//                             handler:nil];
+//    [task resume];
+//    [self waitForExpectationsWithTimeout:2.0 handler:nil];
+//    [task cancel];
+//}
+//
+//- (void)testDidSuspendNotificationIsReceivedByDataTaskAfterSuspend {
+//    [self expectationForNotification:@"com.alamofire.networking.task.suspend"
+//                              object:nil
+//                             handler:nil];
+//    NSURL *delayURL = [self.baseURL URLByAppendingPathComponent:@"delay/1"];
+//    NSURLSessionDataTask *task = [self.manager dataTaskWithRequest:[NSURLRequest requestWithURL:delayURL]
+//                                                 completionHandler:nil];
+//    [task resume];
+//    [task suspend];
+//    [self waitForExpectationsWithTimeout:2.0 handler:nil];
+//    [task cancel];
+//}
+//
+//- (void)testDidResumeNotificationIsReceivedByUploadTaskAfterResume {
+//    NSURL *delayURL = [self.baseURL URLByAppendingPathComponent:@"delay/1"];
+//    NSURLSessionUploadTask *task = [self.manager uploadTaskWithRequest:[NSURLRequest requestWithURL:delayURL]
+//                                                              fromData:nil
+//                                                              progress:nil
+//                                                     completionHandler:nil];
+//    [task resume];
+//    [task suspend];
+//    [self expectationForNotification:@"com.alamofire.networking.task.resume"
+//                              object:nil
+//                             handler:nil];
+//    [task resume];
+//    [self waitForExpectationsWithTimeout:2.0 handler:nil];
+//    [task cancel];
+//}
+//
+//- (void)testDidSuspendNotificationIsReceivedByUploadTaskAfterSuspend {
+//    [self expectationForNotification:@"com.alamofire.networking.task.suspend"
+//                              object:nil
+//                             handler:nil];
+//    NSURL *delayURL = [self.baseURL URLByAppendingPathComponent:@"delay/1"];
+//    NSURLSessionUploadTask *task = [self.manager uploadTaskWithRequest:[NSURLRequest requestWithURL:delayURL]
+//                                                              fromData:nil
+//                                                              progress:nil
+//                                                     completionHandler:nil];
+//    [task resume];
+//    [task suspend];
+//    [self waitForExpectationsWithTimeout:2.0 handler:nil];
+//    [task cancel];
+//}
+//
+//- (void)testDidResumeNotificationIsReceivedByDownloadTaskAfterResume {
+//    NSURL *delayURL = [self.baseURL URLByAppendingPathComponent:@"delay/1"];
+//    NSURLSessionUploadTask *task = [self.manager uploadTaskWithRequest:[NSURLRequest requestWithURL:delayURL]
+//                                                              fromData:nil
+//                                                              progress:nil
+//                                                     completionHandler:nil];
+//    [task resume];
+//    [task suspend];
+//    [self expectationForNotification:@"com.alamofire.networking.task.resume"
+//                              object:nil
+//                             handler:nil];
+//    [task resume];
+//    [self waitForExpectationsWithTimeout:2.0 handler:nil];
+//    [task cancel];
+//}
+//
+//- (void)testDidSuspendNotificationIsReceivedByDownloadTaskAfterSuspend {
+//    [self expectationForNotification:@"com.alamofire.networking.task.suspend"
+//                              object:nil
+//                             handler:nil];
+//    NSURL *delayURL = [self.baseURL URLByAppendingPathComponent:@"delay/1"];
+//    NSURLSessionDownloadTask *task = [self.manager downloadTaskWithRequest:[NSURLRequest requestWithURL:delayURL]
+//                                                                progress:nil
+//                                                             destination:nil
+//                                                       completionHandler:nil];
+//    [task resume];
+//    [task suspend];
+//    [self waitForExpectationsWithTimeout:2.0 handler:nil];
+//    [task cancel];
+//}
+//
+//- (void)testSwizzlingIsWorkingAsExpected {
+//    [self expectationForNotification:@"com.alamofire.networking.task.suspend"
+//                              object:nil
+//                             handler:nil];
+//    NSURL *delayURL = [self.baseURL URLByAppendingPathComponent:@"delay/1"];
+//    NSURLSessionDownloadTask *task = [self.manager downloadTaskWithRequest:[NSURLRequest requestWithURL:delayURL]
+//                                                                progress:nil
+//                                                             destination:nil
+//                                                       completionHandler:nil];
+//    [task resume];
+//    [task suspend];
+//    [self waitForExpectationsWithTimeout:2.0 handler:nil];
+//    [task cancel];
+//    
+//    
+//    [self expectationForNotification:@"com.alamofire.networking.task.suspend"
+//                              object:nil
+//                             handler:nil];
+//    
+//    NSURLSessionDataTask *uploadTask = [self.manager uploadTaskWithRequest:[NSURLRequest requestWithURL:delayURL]
+//                                                                  fromData:nil
+//                                                                  progress:nil
+//                                                         completionHandler:nil];
+//    [uploadTask resume];
+//    [uploadTask suspend];
+//    [self waitForExpectationsWithTimeout:2.0 handler:nil];
+//    [uploadTask cancel];
+//}
+
 @end

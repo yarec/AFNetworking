@@ -52,6 +52,11 @@
     }] setNetworkActivityIndicatorVisible:YES];
 }
 
+- (void)tearDown {
+    [super tearDown];
+    [self.mockApplication stopMocking];
+}
+
 #pragma mark -
 
 - (void)testThatNetworkActivityIndicatorTurnsOffIndicatorWhenRequestSucceeds {
