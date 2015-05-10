@@ -157,12 +157,14 @@ static NSURLRequest * AFNetworkRequestFromNotification(NSNotification *notificat
 
 - (void)networkRequestDidStart:(NSNotification *)notification {
     if ([AFNetworkRequestFromNotification(notification) URL]) {
+        NSLog(@"networkRequestDidStart: %@", AFNetworkRequestFromNotification(notification));
         [self incrementActivityCount];
     }
 }
 
 - (void)networkRequestDidFinish:(NSNotification *)notification {
     if ([AFNetworkRequestFromNotification(notification) URL]) {
+        NSLog(@"networkRequestDidFinish: %@", AFNetworkRequestFromNotification(notification));
         [self decrementActivityCount];
     }
 }
