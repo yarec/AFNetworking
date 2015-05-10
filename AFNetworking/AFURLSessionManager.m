@@ -20,7 +20,9 @@
 // THE SOFTWARE.
 
 #import "AFURLSessionManager.h"
+
 #import <objc/runtime.h>
+#import <objc/message.h>
 
 #if (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) && __IPHONE_OS_VERSION_MAX_ALLOWED >= 70000) || (defined(__MAC_OS_X_VERSION_MAX_ALLOWED) && __MAC_OS_X_VERSION_MAX_ALLOWED >= 1090)
 
@@ -255,67 +257,80 @@ expectedTotalBytes:(int64_t)expectedTotalBytes {
 
 #pragma mark -
 
-/*
- A workaround for issues related to key-value observing the `state` of an `NSURLSessionTask`.
-
- See https://github.com/AFNetworking/AFNetworking/issues/1477
+/**
+ *  A workaround for issues related to key-value observing the `state` of an `NSURLSessionTask`.
+ *
+ *  See:
+ *  - https://github.com/AFNetworking/AFNetworking/issues/1477
+ *  - https://github.com/AFNetworking/AFNetworking/issues/2638
+ *  - https://github.com/AFNetworking/AFNetworking/pull/2702
  */
-
-static inline void af_swizzleSelector(Class class, SEL originalSelector, SEL swizzledSelector) {
-    Method originalMethod = class_getInstanceMethod(class, originalSelector);
-    Method swizzledMethod = class_getInstanceMethod(class, swizzledSelector);
-    if (class_addMethod(class, originalSelector, method_getImplementation(swizzledMethod), method_getTypeEncoding(swizzledMethod))) {
-        class_replaceMethod(class, swizzledSelector, method_getImplementation(originalMethod), method_getTypeEncoding(originalMethod));
-    } else {
-        method_exchangeImplementations(originalMethod, swizzledMethod);
-    }
-}
-
-static inline void af_addMethod(Class class, SEL selector, Method method) {
-    class_addMethod(class, selector,  method_getImplementation(method),  method_getTypeEncoding(method));
-}
 
 static NSString * const AFNSURLSessionTaskDidResumeNotification  = @"com.alamofire.networking.nsurlsessiontask.resume";
 static NSString * const AFNSURLSessionTaskDidSuspendNotification = @"com.alamofire.networking.nsurlsessiontask.suspend";
 
-@interface NSURLSessionTask (_AFStateObserving)
-@end
-
-@implementation NSURLSessionTask (_AFStateObserving)
-
-- (void)af_resume {
-    NSURLSessionTaskState state = self.state;
-    [self af_resume];
-
-    if (state != NSURLSessionTaskStateRunning) {
-        [[NSNotificationCenter defaultCenter] postNotificationName:AFNSURLSessionTaskDidResumeNotification object:self];
-    }
-}
-
-- (void)af_suspend {
-    NSURLSessionTaskState state = self.state;
-    [self af_suspend];
-
-    if (state != NSURLSessionTaskStateSuspended) {
-        [[NSNotificationCenter defaultCenter] postNotificationName:AFNSURLSessionTaskDidSuspendNotification object:self];
-    }
-}
-
-@end
-
 @interface _AFURLSessionTaskSwizzling : NSObject
-
 @end
 
 @implementation _AFURLSessionTaskSwizzling
 
 + (void)load {
-    Class urlSessionTaskClass = NSClassFromString(@"NSURLSessionTask");
-    af_addMethod(urlSessionTaskClass, @selector(af_resume),  class_getInstanceMethod(urlSessionTaskClass, @selector(af_resume)));
-    af_addMethod(urlSessionTaskClass, @selector(af_suspend), class_getInstanceMethod(urlSessionTaskClass, @selector(af_suspend)));
-    af_swizzleSelector(urlSessionTaskClass, @selector(resume), @selector(af_resume));
-    af_swizzleSelector(urlSessionTaskClass, @selector(suspend), @selector(af_suspend));
+
+    /**
+     *  Due to the class cluster nature of an NSURLSessionTask and varying class hierarchy between iOS 7 and 8,
+     *  swizzling the implementation of the resume and suspend methods is quite complicated. In both versions of
+     *  iOS, the METHOD IMPs reside in the  reside in the `__NSCFLocalSessionTask` private class. This means
+     *  that the class `load` method cannot be overridden directly since it's a private class. Therefore, the class
+     *  needs to be fetched directly. The classic ways to fetch the class all work differently due to the class
+     *  cluster. The following three approaches produce very different classes between iOS 7 and 8.
+     *
+     *      Class class1 = [[[NSURLSession sharedSession] dataTaskWithURL:[NSURL URLWithString:@""]] superclass];
+     *      Class class2 = [NSClassFromString(@"NSURLSessionDataTask") superclass];
+     *      Class class3 = NSClassFromString(@"NSURLSessionTask");
+     *
+     *          NSLog(@"%p - %@, %p - %@, %p - %@",
+     *                class1, NSStringFromClass(class1),
+     *                class2, NSStringFromClass(class2),
+     *                class3, NSStringFromClass(class3));
+     *
+     *  Outputs the following:
+     *  - iOS 7: 0x5da7b28 - __NSCFLocalSessionTask, 0x5da7c90 - __NSCFURLSessionDataTask, 0x1481f4c - NSURLSessionTask
+     *  - iOS 8: 0x6644554 - __NSCFLocalSessionTask, 0x6644fb8 - NSURLSessionTask, 0x6644fb8 - NSURLSessionTask
+     */
+    Class class = [[[NSURLSession sharedSession] dataTaskWithURL:[NSURL URLWithString:@""]] superclass];
+
+    [self swizzleSelector:@selector(resume) forClass:class withNotificationName:AFNSURLSessionTaskDidResumeNotification andTaskState:NSURLSessionTaskStateRunning];
+    [self swizzleSelector:@selector(suspend) forClass:class withNotificationName:AFNSURLSessionTaskDidSuspendNotification andTaskState:NSURLSessionTaskStateSuspended];
 }
+
+@class __NSCFLocalSessionTask;
+
++ (void)swizzleSelector:(SEL)selector
+               forClass:(Class)class
+   withNotificationName:(NSString *)notificationName
+           andTaskState:(NSURLSessionTaskState)taskState
+{
+    SEL swizzledSelector = NSSelectorFromString([NSString stringWithFormat:@"af_%@", NSStringFromSelector(selector)]);
+    Method originalMethod = class_getInstanceMethod(class, selector);
+
+    void (^implementationBlock)(NSURLSessionTask *) = ^(NSURLSessionTask *URLSessionTask) {
+        NSURLSessionTaskState state = URLSessionTask.state;
+
+        typedef void (*send_type)(NSURLSessionTask *, SEL);
+        send_type func = (send_type)objc_msgSend;
+        func(URLSessionTask, swizzledSelector);
+
+        if (state != taskState) {
+            [[NSNotificationCenter defaultCenter] postNotificationName:notificationName object:URLSessionTask];
+        }
+    };
+
+    IMP implementation = imp_implementationWithBlock(implementationBlock);
+    class_addMethod(class, swizzledSelector, implementation, method_getTypeEncoding(originalMethod));
+    Method newMethod = class_getInstanceMethod(class, swizzledSelector);
+    method_exchangeImplementations(originalMethod, newMethod);
+}
+
 @end
 
 #pragma mark -
