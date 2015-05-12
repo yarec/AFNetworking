@@ -38,10 +38,14 @@
     self.localManager = [[AFURLSessionManager alloc] init];
     
     //Unfortunately, iOS 7 throws an exception when trying to create a background URL Session, which means our tests here can only run on iOS 8+
-    if ([NSURLSessionConfiguration respondsToSelector:@selector(backgroundSessionConfigurationWithIdentifier:)]) {
+    //Travis actually needs the try catch here. Just doing if ([NSURLSessionConfiguration respondsToSelector:@selector(backgroundSessionWithIdentifier)]) wasn't good enough.
+    @try {
         NSString *identifier = [NSString stringWithFormat:@"com.afnetworking.tests.urlsession.%@", [[NSUUID UUID] UUIDString]];
         NSURLSessionConfiguration *configuration = [NSURLSessionConfiguration backgroundSessionConfigurationWithIdentifier:identifier];
         self.backgroundManager = [[AFURLSessionManager alloc] initWithSessionConfiguration:configuration];
+    }
+    @catch (NSException *exception) {
+
     }
 }
 
