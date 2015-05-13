@@ -349,7 +349,7 @@ static NSString * const AFNSURLSessionTaskDidSuspendNotification = @"com.alamofi
 - (void)af_resume {
     NSURLSessionTaskState state;
     SEL selector = @selector(state);
-    NSAssert(selector, @"Does not respond to state");
+    NSAssert([self respondsToSelector:selector], @"Does not respond to state");
     NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:
                                 [[self class] instanceMethodSignatureForSelector:selector]];
     [invocation setSelector:selector];
@@ -366,7 +366,7 @@ static NSString * const AFNSURLSessionTaskDidSuspendNotification = @"com.alamofi
 - (void)af_suspend {
     NSURLSessionTaskState state;
     SEL selector = @selector(state);
-    NSAssert(selector, @"Does not respond to state");
+    NSAssert([self respondsToSelector:selector], @"Does not respond to state");
     NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:
                                 [[self class] instanceMethodSignatureForSelector:selector]];
     [invocation setSelector:selector];
